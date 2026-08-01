@@ -37,31 +37,42 @@ export default function CheckinPage() {
   /* load today's log */
   const refreshLog = async () => {
     if (!user) return
-    const res = await apiGetHistory({ userId: user.id, date: getTodayStr() })
+    // Server scopes tự động theo JWT — không cần gửi userId
+    const res = await apiGetHistory({ date: getTodayStr() })
     setLog(res[0] ?? null)
   }
   useEffect(() => { refreshLog() }, [user]) // eslint-disable-line
 
-  /* QR scanned → get GPS */
-  const handleScan = async (scannedToken: string) => {
-    setToken(scannedToken)
+  /* QR scanned → extract token (hỗ trợ cả raw token và URL deep link) → get GPS */
+  const handleScan = async (scannedValue: string) => {
+    // Kiosk encode URL dạng: http://host/face-checkin?t=<token>
+    // CheckinPage chỉ cần lấy phần token
+    let extractedToken = scannedValue
+    try {
+      const url = new URL(scannedValue)
+      const t = url.searchParams.get('t')
+      if (t) extractedToken = t
+    } catch {
+      // Không phải URL → dùng nguyên raw string
+    }
+    setToken(extractedToken)
     setStep('gps')
     try {
       const pos = await getCurrentPosition()
       setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude })
     } catch {
-      // Demo fallback: Hà Nội office area
+      // Demo fallback: Hà Nội office area — xoá dòng này ở production
       setCoords({ lat: 21.0245, lng: 105.8412 })
     }
     setStep('confirm')
   }
 
-  /* Submit checkin */
+  /* Submit checkin — userId diễn giải từ JWT phía server */
   const handleConfirm = async () => {
     if (!coords || !user) return
     setLoading(true)
     try {
-      const res = await apiCheckin({ userId: user.id, qrToken: token, lat: coords.lat, lng: coords.lng })
+      const res = await apiCheckin({ qrToken: token, lat: coords.lat, lng: coords.lng })
       setMessage(res.message)
       setError('')
       await refreshLog()

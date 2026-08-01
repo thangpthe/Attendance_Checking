@@ -9,29 +9,39 @@ interface Props {
 
 export default function FaceCapture({ onCapture, disabled }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null)
-  const [stream, setStream] = useState<MediaStream | null>(null)
+  // Dùng ref để track stream — tránh stale closure trong cleanup
+  const streamRef = useRef<MediaStream | null>(null)
+  const [ready, setReady] = useState(false)
   const [error, setError] = useState('')
 
   useEffect(() => {
-    let active = true
+    let cancelled = false
+
     navigator.mediaDevices
       .getUserMedia({ video: { facingMode: 'user' }, audio: false })
       .then(s => {
-        if (!active) { s.getTracks().forEach(t => t.stop()); return }
-        setStream(s)
+        if (cancelled) {
+          // Component unmount trước khi camera start xong → dừng ngay
+          s.getTracks().forEach(t => t.stop())
+          return
+        }
+        streamRef.current = s
         if (videoRef.current) videoRef.current.srcObject = s
+        setReady(true)
       })
       .catch(() => setError('Không thể truy cập camera. Vui lòng cấp quyền camera cho trình duyệt.'))
+
     return () => {
-      active = false
-      stream?.getTracks().forEach(t => t.stop())
+      cancelled = true
+      // Dùng ref.current để đảm bảo luôn stop đúng stream
+      streamRef.current?.getTracks().forEach(t => t.stop())
+      streamRef.current = null
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   function capture() {
     const video = videoRef.current
-    if (!video) return
+    if (!video || !ready) return
     const canvas = document.createElement('canvas')
     canvas.width = video.videoWidth
     canvas.height = video.videoHeight
@@ -49,7 +59,7 @@ export default function FaceCapture({ onCapture, disabled }: Props) {
         style={{ width: '100%', maxWidth: 320, borderRadius: 12, transform: 'scaleX(-1)' }}
       />
       <div style={{ marginTop: 16 }}>
-        <Button size="lg" onClick={capture} disabled={disabled || !stream}>
+        <Button size="lg" onClick={capture} disabled={disabled || !ready}>
           <MdCameraAlt size={18} /> Chụp khuôn mặt
         </Button>
       </div>

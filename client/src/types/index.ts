@@ -39,7 +39,7 @@ export interface TodayStats {
 }
 
 export interface CheckinRequest {
-  userId: string; qrToken: string; lat: number; lng: number
+  qrToken: string; lat: number; lng: number
 }
 
 export interface CheckinResponse {

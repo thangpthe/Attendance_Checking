@@ -27,7 +27,8 @@ export function calcHours(checkin: string | null, checkout: string | null): stri
 }
 
 export function getTodayStr(): string {
-  return new Date().toISOString().split('T')[0]
+  // Dùng UTC+7 offset để tránh ghi nhầm ngày lúc 23:xx giờ VN
+  return new Date(Date.now() + 7 * 3600_000).toISOString().split('T')[0]
 }
 
 export function getStatusLabel(status: AttendanceStatus | string): string {

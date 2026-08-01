@@ -24,7 +24,7 @@ export default function HistoryPage() {
     setLoading(true)
     try {
       const res = await apiGetHistory({
-        userId: isAdmin ? undefined : user?.id,
+        // Server tự scope userId từ JWT cho EMPLOYEE, không cần gửi tường minh
         date:   filterDate || undefined,
         status: filterStatus !== 'ALL' ? filterStatus : undefined,
       })

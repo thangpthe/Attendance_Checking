@@ -1,6 +1,4 @@
 import { useEffect, useState, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { useAuthStore } from '@/store/authStore'
 import Layout from '@/components/layout/Layout'
 import StatCard from '@/components/common/StatCard'
 import AttendanceTable from '@/components/features/attendance/AttendanceTable'
@@ -14,15 +12,9 @@ import {
 } from 'react-icons/md'
 
 export default function DashboardPage() {
-  const { user } = useAuthStore()
-  const navigate = useNavigate()
   const [stats,   setStats]   = useState<TodayStats | null>(null)
   const [logs,    setLogs]    = useState<EnrichedLog[]>([])
   const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    if (user?.role !== 'ADMIN') navigate('/checkin')
-  }, [user, navigate])
 
   const loadData = useCallback(async () => {
     setLoading(true)

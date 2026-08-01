@@ -1,34 +1,50 @@
-import { useState, useEffect, useRef } from 'react'
-import { getCurrentToken, getSecondsLeft, generateToken } from '../lib/qr'
+import { useState, useEffect, useRef, useCallback } from 'react'
 
-const REFRESH_SEC = 10
+const BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001'
+// URL mà nhân viên sẽ mở khi scan QR bằng camera điện thoại (face-checkin flow)
+const APP_ORIGIN = import.meta.env.VITE_APP_URL || window.location.origin
 
 export function useQrPoller(locationId: string) {
   const [token,     setToken]     = useState('')
-  const [countdown, setCountdown] = useState(REFRESH_SEC)
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const countRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const [qrUrl,     setQrUrl]     = useState('')   // URL encode vào QR cho face-checkin flow
+  const [countdown, setCountdown] = useState(10)
+  const [error,     setError]     = useState('')
 
-  function refresh(id: string) {
-    const { token: t } = getCurrentToken(id)
-    setToken(t)
-    setCountdown(getSecondsLeft(id) || REFRESH_SEC)
-  }
+  const expiresAtRef = useRef<number>(0)
+  const intervalRef  = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  const refreshNow = () => {
-    generateToken(locationId)
-    refresh(locationId)
-  }
+  const fetchFromServer = useCallback(async (id: string) => {
+    try {
+      const res  = await fetch(`${BASE}/api/qr/current/${id}`)
+      const data = await res.json() as { token: string; expiresAt: number }
+      setToken(data.token)
+      // Encode URL vào QR: điện thoại scan → mở face-checkin page với token
+      setQrUrl(`${APP_ORIGIN}/face-checkin?t=${encodeURIComponent(data.token)}`)
+      expiresAtRef.current = data.expiresAt
+      setCountdown(Math.max(1, Math.ceil((data.expiresAt - Date.now()) / 1000)))
+      setError('')
+    } catch {
+      setError('Không kết nối được server')
+    }
+  }, [])
+
+  const refreshNow = useCallback(() => fetchFromServer(locationId), [locationId, fetchFromServer])
 
   useEffect(() => {
-    refresh(locationId)
-    timerRef.current = setInterval(() => refresh(locationId), REFRESH_SEC * 1000)
-    countRef.current = setInterval(() => setCountdown(getSecondsLeft(locationId)), 1000)
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current)
-      if (countRef.current) clearInterval(countRef.current)
-    }
-  }, [locationId])
+    fetchFromServer(locationId)
 
-  return { token, countdown, refreshNow }
+    // 1 interval duy nhất: đếm ngược, tự fetch khi hết hạn
+    intervalRef.current = setInterval(() => {
+      const left = Math.ceil((expiresAtRef.current - Date.now()) / 1000)
+      if (left <= 0) {
+        fetchFromServer(locationId)
+      } else {
+        setCountdown(left)
+      }
+    }, 1000)
+
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current) }
+  }, [locationId, fetchFromServer])
+
+  return { token, qrUrl, countdown, error, refreshNow }
 }

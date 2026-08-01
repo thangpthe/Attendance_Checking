@@ -5,7 +5,7 @@ export interface AuthRequest extends Request { user?: { id: string; role: string
 
 export function authMiddleware(req: AuthRequest, res: Response, next: NextFunction) {
   const header = req.headers.authorization
-  if (!header?.startsWith('Bearer ')) return res.status(401).json({ error: 'Thiếu token' })
+  if (!header?.startsWith('Bearer ')) return res.status(401).json({ error: 'Thiếu token, vui lòng đăng nhập' })
   try {
     req.user = jwt.verify(header.slice(7), process.env.JWT_SECRET!) as any
     next()

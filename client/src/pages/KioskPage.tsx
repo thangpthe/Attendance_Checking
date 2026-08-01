@@ -4,11 +4,11 @@ import QrDisplay from '@/components/features/qr/QrDisplay'
 import { useQrPoller } from '@/hooks/useQrPoller'
 import { LOCATIONS } from '@/lib/api'
 import Button from '@/components/common/Button'
-import { MdQrCode2, MdRefresh, MdLocationOn, MdLock, MdFormatListNumbered } from 'react-icons/md'
+import { MdQrCode2, MdRefresh, MdLocationOn, MdLock, MdFormatListNumbered, MdFace } from 'react-icons/md'
 
 export default function KioskPage() {
   const [selectedId, setSelectedId] = useState(LOCATIONS[0].id)
-  const { token, countdown, refreshNow } = useQrPoller(selectedId)
+  const { qrUrl, countdown, error, refreshNow } = useQrPoller(selectedId)
   const [time, setTime] = useState(new Date())
 
   useEffect(() => {
@@ -41,10 +41,11 @@ export default function KioskPage() {
             background: 'linear-gradient(135deg,rgba(99,102,241,.06),rgba(168,85,247,.04))',
           }}>
             <QrDisplay
-              token={token}
+              qrValue={qrUrl}
               countdown={countdown}
               locationName={selectedLoc?.name || ''}
               totalSeconds={10}
+              error={error}
             />
           </div>
 
@@ -98,23 +99,50 @@ export default function KioskPage() {
               <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 12, textTransform: 'uppercase', letterSpacing: '.05em', display:'flex', alignItems:'center', gap:6 }}>
                 <MdFormatListNumbered size={15} /> Hướng dẫn
               </div>
-              {[
-                { n: '1', text: 'Mở ChamCong.vn trên điện thoại' },
-                { n: '2', text: 'Đăng nhập tài khoản nhân viên' },
-                { n: '3', text: 'Nhấn "Quét QR để Check-in"' },
-                { n: '4', text: 'Đưa camera quét mã QR này' },
-                { n: '5', text: 'Xác nhận vị trí và chấm công' },
-              ].map(item => (
-                <div key={item.n} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', marginBottom: 10 }}>
-                  <div style={{
-                    width: 22, height: 22, borderRadius: '50%', flexShrink: 0,
-                    background: 'linear-gradient(135deg,var(--accent),var(--purple))',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 11, fontWeight: 800, color: '#fff',
-                  }}>{item.n}</div>
-                  <span style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.5 }}>{item.text}</span>
+              {/* Face checkin flow */}
+              <div style={{ marginBottom: 14 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                  <MdFace size={14} color="var(--accent)" />
+                  <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--accent-light)' }}>Chấm công bằng khuôn mặt</span>
                 </div>
-              ))}
+                {[
+                  'Dùng camera điện thoại quét QR',
+                  'Cho phép truy cập vị trí GPS',
+                  'Nhìn thẳng vào camera → Chụp',
+                ].map((text, i) => (
+                  <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', marginBottom: 6 }}>
+                    <div style={{
+                      width: 20, height: 20, borderRadius: '50%', flexShrink: 0,
+                      background: 'linear-gradient(135deg,var(--accent),var(--purple))',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 10, fontWeight: 800, color: '#fff',
+                    }}>{i + 1}</div>
+                    <span style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.5 }}>{text}</span>
+                  </div>
+                ))}
+              </div>
+              <div style={{ height: 1, background: 'var(--border)', margin: '8px 0' }} />
+              {/* QR+GPS flow */}
+              <div style={{ marginBottom: 4 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 8 }}>
+                  Chấm công qua app (đã đăng nhập)
+                </div>
+                {[
+                  'Đăng nhập tại ChamCong.vn',
+                  'Vào trang Chấm công',
+                  'Nhấn "Quét QR" → quét màn hình này',
+                ].map((text, i) => (
+                  <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', marginBottom: 6 }}>
+                    <div style={{
+                      width: 20, height: 20, borderRadius: '50%', flexShrink: 0,
+                      background: 'var(--bg-card-hover)', border: '1px solid var(--border)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 10, fontWeight: 800, color: 'var(--text-muted)',
+                    }}>{i + 1}</div>
+                    <span style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.5 }}>{text}</span>
+                  </div>
+                ))}
+              </div>
             </div>
 
             {/* Security badge */}

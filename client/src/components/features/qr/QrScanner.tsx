@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Html5Qrcode } from 'html5-qrcode'
 
 interface Props { onScan: (token: string) => void; onClose: () => void }
@@ -6,6 +6,9 @@ interface Props { onScan: (token: string) => void; onClose: () => void }
 export default function QrScanner({ onScan, onClose }: Props) {
   const [started, setStarted] = useState(false)
   const [error, setError] = useState('')
+  // Dùng ref để luôn gọi callback mới nhất mà không cần restart scanner
+  const onScanRef = useRef(onScan)
+  onScanRef.current = onScan
 
   useEffect(() => {
     const scanner = new Html5Qrcode('qr-scanner-el')
@@ -13,7 +16,7 @@ export default function QrScanner({ onScan, onClose }: Props) {
       { facingMode: 'environment' },
       { fps: 10, qrbox: 240 },
       (text) => {
-        scanner.stop().then(() => onScan(text)).catch(console.error)
+        scanner.stop().then(() => onScanRef.current(text)).catch(console.error)
       },
       () => {} // ignore errors
     ).then(() => setStarted(true)).catch(err => setError(err.message || 'Không thể truy cập camera'))
@@ -23,7 +26,7 @@ export default function QrScanner({ onScan, onClose }: Props) {
         scanner.stop().catch(console.error)
       }
     }
-  }, [onScan])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="qr-scanner-overlay" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 1000, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>

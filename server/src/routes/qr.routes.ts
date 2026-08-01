@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { generateQrToken } from '../lib/qr'
+import { generateQrToken } from '../lib/qr.js'
 
 const store = new Map<string, { token: string; expiresAt: number }>()
 const router = Router()
