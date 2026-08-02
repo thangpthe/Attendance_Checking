@@ -5,7 +5,8 @@ import { saveToken, clearToken } from '../lib/api'
 
 interface AuthState {
   user: User | null
-  login:  (user: User, token?: string) => void
+  token: string | null
+  login:  (user: User, token: string) => void
   logout: () => void
 }
 
@@ -13,9 +14,9 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
       user:   null,
-      // token đã được saveToken() trong apiLogin() trước khi gọi login()
-      login:  (user) => set({ user }),
-      logout: () => { clearToken(); set({ user: null }) },
+      token:  null,
+      login:  (user,token) => set({ user,token }),
+      logout: () => { set({ user: null, token: null }) },
     }),
     { name: 'chamcong-auth' },
   ),

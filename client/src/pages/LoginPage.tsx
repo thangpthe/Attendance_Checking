@@ -22,8 +22,8 @@ export default function LoginPage() {
     setLoading(true); setError('')
     try {
       const res = await apiLogin(email, password)
-      login(res)
-      navigate(res.role === 'ADMIN' ? '/dashboard' : '/checkin')
+      login(res.user, res.token)
+      navigate(res.user.role === 'ADMIN' ? '/dashboard' : '/checkin')
     } catch (err: unknown) {
       setError((err as Error).message || 'Đăng nhập thất bại')
     } finally {

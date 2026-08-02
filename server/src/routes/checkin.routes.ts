@@ -4,7 +4,7 @@ import { verifyQrToken } from '../lib/qr.js'
 import { isWithinRadius } from '../lib/gps.js'
 import { LocationModel } from '../models/Location.js'
 import { UserModel } from '../models/User.js'
-import { AttendanceLogModel } from '../models/AttendanceLogs.js'
+import { AttendanceLogModel } from '../models/AttendanceLog.js'
 
 const router = Router()
 const GEOFENCE_RADIUS_M = Number(process.env.GEOFENCE_RADIUS_M || 20)
